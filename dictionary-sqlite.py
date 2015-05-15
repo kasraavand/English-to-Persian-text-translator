@@ -27,7 +27,7 @@ with con:
     rows = cur.fetchall()
     for row in rows:
          un_paretthesis=re.sub(r'\(.*\)','',row[2],flags=re.UNICODE)
-         dic1[row[1]]=filter(bool,re.split(u'،',un_paretthesis,flags=re.UNICODE))
+         dic1[row[1]]=filter(bool,re.split(ur'[،,]',un_paretthesis,flags=re.UNICODE))
 
 #print dic1['apple']
 stemmer=LancasterStemmer()
@@ -116,7 +116,7 @@ class InputDialog(QtGui.QMainWindow):
         if ok :  
          dic1[str(inword)]=text
          #print text.encode('utf-8')
-         self.update(text,inword,flag=True)
+         self.update(text,flag=True)
          f.write(inword)
          f.write('\n')
 
@@ -127,38 +127,48 @@ class InputDialog(QtGui.QMainWindow):
     con = lite.connect('Generic_English_Persian.m2')
     if len(words)>1:
       for w in words :
-          text,ok=self.dialogbox.getText(QtGui.QInputDialog(),'Update meaning of {}'.format(w),'Enter meaning here: ',QtGui.QLineEdit.Normal,'{}'.format('|'.join(dic1[w]).encode('utf-8')))
-          if ok :
-            dic1[str(inword)]=text
-            with con:
-             cur = con.cursor()  
-             cur.execute("SELECT * FROM word")
-             cur.execute("UPDATE word SET Wmean=? WHERE Wname=?",[text+' '+' '.join(dic1[w]), str(w)])       
-             con.commit()
-    elif not flag:
-          text,ok=self.dialogbox.getText(QtGui.QInputDialog(),'Update meaning of {}'.format(words[0]),'',QtGui.QLineEdit.Normal,'')
-          if ok :
-            dic1[str(inword)]=text
-            with con:
-             cur = con.cursor()  
-             cur.execute("SELECT * FROM word")
-             cur.execute("UPDATE word SET Wmean=? WHERE Wname=?",[text+' '+' '.join(dic1[words[0]]), str(words[0])])       
-             con.commit()
-    else:
-            print 'aaaaaaa'
-            with con:
-                cur = con.cursor()  
-                cur.execute("SELECT * FROM word")
-                rows = cur.fetchall()
-                i=len(rows)+1
-                cur.execute("insert into word (s_id,Wname,Wmean) values (?, ?, ?)",(i,inword,unicode(text)))        
 
+        try :
+
+          text,ok=self.dialogbox.getText(QtGui.QInputDialog(),'Update meaning of {}'.format(w),'Enter meaning here: ',QtGui.QLineEdit.Normal,','.join(dic1[w]))
+          if ok :
+            dic1[str(inword)]=text
+            with con:
+             cur = con.cursor()  
+             cur.execute("SELECT * FROM word")
+             cur.execute("UPDATE word SET Wmean=? WHERE Wname=?",[text, str(w)])       
+             con.commit()
+
+        except KeyError:
+          self.createor(w)
+
+    elif not flag:
+          text,ok=self.dialogbox.getText(QtGui.QInputDialog(),'Update meaning of {}'.format(words[0]),'',QtGui.QLineEdit.Normal,','.join(dic1[words[0]]))
+          if ok :
+            dic1[str(inword)]=text
+            with con:
+             cur = con.cursor()  
+             cur.execute("SELECT * FROM word")
+             cur.execute("UPDATE word SET Wmean=? WHERE Wname=?",[text, str(inword)])       
+             con.commit()
+    else:        
+        self.createor(inword)
    
 
   def keyPressEvent(self, e):
           if e.key() == QtCore.Qt.Key_Escape:
               self.insert()
 
+  def createor(self,inword):
+    text,ok=self.dialogbox.getText(QtGui.QInputDialog(),'Update meaning of {}'.format(inword),'',QtGui.QLineEdit.Normal,'')
+    if ok :
+      dic1[str(inword)]=text
+      with con:
+          cur = con.cursor()  
+          cur.execute("SELECT * FROM word")
+          rows = cur.fetchall()
+          i=len(rows)+1
+          cur.execute("insert into word (s_id,Wname,Wmean) values (?, ?, ?)",(i,inword,unicode(text)))
 
   def sentence_translator (self,sentence) :
     sentence=' '.join(self.text_refiner(sentence))
