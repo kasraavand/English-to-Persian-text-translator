@@ -1,6 +1,6 @@
 #A simple English to Persian text translator
 
-##For now its contains the following features :
+##For now it contains the following features :
 
 <li>show the translate of worlds </li>
 <li>translating the text by sentences</li>
