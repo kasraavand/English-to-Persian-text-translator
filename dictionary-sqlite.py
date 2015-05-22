@@ -15,7 +15,7 @@ from nltk.tokenize import sent_tokenize,word_tokenize
 #from itertools import groupby ,chain
 from nltk.tag import pos_tag
 from nltk.corpus import wordnet
-
+from string import punctuation
 dic1={}
 
 #import data from database
@@ -101,7 +101,7 @@ class InputDialog(QtGui.QMainWindow):
       elif inword in dic1.keys():
           self.lbl5.clear()
           if isinstance(dic1[inword],list):
-            self.lbl5.append('\n'.join(dic1[inword]))
+            self.lbl5.append('\n'.join(map(lambda x:x.strip(punctuation),dic1[inword])))
           else :
             self.lbl5.append(dic1[inword])
 
@@ -112,15 +112,12 @@ class InputDialog(QtGui.QMainWindow):
         self.sentence_translator(inword)
 
       else :
-        text,ok=self.dialogbox.getText(QtGui.QInputDialog(),'Create Persian meaning','Enter meaning here: ',QtGui.QLineEdit.Normal,'meaning')
-        if ok :  
-         dic1[str(inword)]=text
          #print text.encode('utf-8')
-         self.update(text,flag=True)
+         self.update(flag=True)
          f.write(inword)
          f.write('\n')
 
-  def update(self,text='',flag=False):
+  def update(self,flag=False):
 
     inword=self.label6.toPlainText().lower()
     words=inword.split()
@@ -160,6 +157,7 @@ class InputDialog(QtGui.QMainWindow):
               self.insert()
 
   def createor(self,inword):
+    print 'kkkkkkk'
     text,ok=self.dialogbox.getText(QtGui.QInputDialog(),'Update meaning of {}'.format(inword),'',QtGui.QLineEdit.Normal,'')
     if ok :
       dic1[str(inword)]=text
@@ -174,7 +172,7 @@ class InputDialog(QtGui.QMainWindow):
     sentence=' '.join(self.text_refiner(sentence))
     #sentences=sent_tokenize(sentence)
     l=re.split(r',|\.',sentence)
-    T= [pos_tag(word_tokenize(i)) for i in l]
+    T= [pos_tag(map(lambda x:x.strip('?!'),word_tokenize(i))) for i in l]
     #print T
 
     for j in T :
@@ -183,11 +181,14 @@ class InputDialog(QtGui.QMainWindow):
             j.append(j.pop(i))
     
     word_list=[zip(*i)[0] for i in T if i]
-    all_trans=[dic1[j][0] if j in dic1 else j for i in word_list for j in self.word_refiner(*i)]
-
+    all_trans=[dic1[j][0].strip(punctuation) if j in dic1 else j for i in word_list for j in self.word_refiner(*i)]
 
     self.lbl5.clear()
-    self.lbl5.append(' '.join(all_trans))
+    if '?' in sentence :
+      self.lbl5.append(' '.join(all_trans)+'?')
+    elif '!' :
+      self.lbl5.append(' '.join(all_trans)+'!')
+    
 
   def word_refiner(*args):
     Portst = PorterStemmer()
